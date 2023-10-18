@@ -26,6 +26,7 @@ func (s *service) Add(ctx context.Context, message Message) error {
 	if err != nil {
 		return err
 	}
+	// broadcast new message to all channels
 	for id, messageChannel := range s.messageChannels {
 		select {
 		case messageChannel <- message:

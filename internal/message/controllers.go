@@ -2,14 +2,14 @@ package message
 
 import (
 	"context"
-	"github.com/google/uuid"
+	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
 type Service interface {
 	Add(ctx context.Context, message Message) error
-	Attach(ctx context.Context, observer Observer) error
-	Detach(ctx context.Context, observer Observer) error
+	Attach(ctx context.Context) (<-chan Message, error)
 }
 
 type Controller struct {
@@ -18,8 +18,17 @@ type Controller struct {
 
 func (c *Controller) HandleAdd() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// todo: parse, call c.service.Add(r.Context(),message)
-		http.NotFound(w, r)
+		var msg Message
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&msg); err != nil {
+			http.Error(w, "invalid JSON payload", http.StatusBadRequest)
+		}
+		if err := c.service.Add(r.Context(), msg); err != nil {
+			http.Error(w, "failed to add message", http.StatusInternalServerError)
+		}
+		// todo: remove
+		fmt.Printf("added message: %s", msg)
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -31,39 +40,27 @@ func (c *Controller) HandleGet() http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		messageChan := make(chan Message, 10)
-		observer := &observer{id: uuid.New().String(), messageChan: messageChan}
-		c.service.Attach(ctx, observer)
-		defer c.service.Detach(ctx, observer)
+		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Transfer-Encoding", "chunked")
+		w.WriteHeader(http.StatusOK)
+		flusher.Flush()
+
+		enc := json.NewEncoder(w)
+
+		msgChan, err := c.service.Attach(ctx)
+		if err != nil {
+			http.Error(w, "failed to listen to the new messages", http.StatusInternalServerError)
+		}
 		for {
 			select {
-			case <-messageChan:
-				// todo: write msg
+			case msg := <-msgChan:
+				_ = enc.Encode(msg)
 				flusher.Flush()
 			case <-ctx.Done():
-				// finish
+				// on client cancelled request
 				return
 			}
 		}
 
 	}
-}
-
-type observer struct {
-	id          string
-	messageChan chan Message
-}
-
-func (o *observer) Send(ctx context.Context, message Message) {
-	select {
-	case o.messageChan <- message:
-
-	case <-ctx.Done():
-
-	}
-
-}
-
-func (o *observer) ID() string {
-	return o.id
 }

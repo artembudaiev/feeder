@@ -1,3 +1,5 @@
 package message
 
-type Message string
+type Message struct {
+	Info string `json:"info"`
+}
