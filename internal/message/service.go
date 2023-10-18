@@ -2,7 +2,8 @@ package message
 
 import (
 	"context"
-	"time"
+	"github.com/google/uuid"
+	"sync"
 )
 
 type Repository interface {
@@ -11,39 +12,45 @@ type Repository interface {
 	Get(context.Context, string) (Message, error)
 }
 
-type Observer interface {
-	Send(ctx context.Context, message Message)
-	ID() string
-}
-
 type service struct {
-	repository Repository
-	observers  map[string]Observer
+	repository      Repository
+	messageChannels map[string]chan Message
+	m               sync.RWMutex
 }
 
 func (s *service) Add(ctx context.Context, message Message) error {
+	s.m.Lock()
+	defer s.m.Unlock()
+
 	_, err := s.repository.Add(ctx, message)
 	if err != nil {
 		return err
 	}
-	for i := range s.observers {
-		sendCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-		defer cancel()
-		s.observers[i].Send(sendCtx, message)
+	for id, messageChannel := range s.messageChannels {
+		select {
+		case messageChannel <- message:
+		default:
+			// message channel is full - consider that receiver does not cope, drop it not to block or not to produce infinite number of goroutines
+			close(messageChannel)
+			delete(s.messageChannels, id)
+		}
 	}
 	return nil
 }
 
-func (s *service) Attach(ctx context.Context, observer Observer) error {
-	messages, _ := s.repository.GetAll(ctx)
-	s.observers[observer.ID()] = observer
+func (s *service) Attach(ctx context.Context) (<-chan Message, error) {
+	s.m.RLock()
+	defer s.m.RUnlock()
+
+	// get all existing messages from repo and feed with them channel
+	messages, err := s.repository.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	messageChan := make(chan Message)
 	for _, message := range messages {
-		observer.Send(ctx, message)
+		messageChan <- message
 	}
-	return nil
-}
-
-func (s *service) Detach(_ context.Context, id string) error {
-	delete(s.observers, id)
-	return nil
+	s.messageChannels[uuid.New().String()] = messageChan
+	return messageChan, nil
 }
