@@ -31,7 +31,7 @@ func (r *InMemoryRepository) GetAll(_ context.Context) ([]Message, error) {
 func (r *InMemoryRepository) Get(_ context.Context, id string) (Message, error) {
 	message, ok := r.storage[id]
 	if !ok {
-		return "", fmt.Errorf("no message found by id %s", id)
+		return Message{}, fmt.Errorf("no message found by id %s", id)
 	}
 	return message, nil
 }

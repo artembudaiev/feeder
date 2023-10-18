@@ -2,6 +2,7 @@ package message
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	"sync"
 )
@@ -16,6 +17,10 @@ type service struct {
 	repository      Repository
 	messageChannels map[string]chan Message
 	m               sync.RWMutex
+}
+
+func NewService(repository Repository) Service {
+	return &service{repository: repository, messageChannels: make(map[string]chan Message, 10), m: sync.RWMutex{}}
 }
 
 func (s *service) Add(ctx context.Context, message Message) error {
@@ -48,7 +53,10 @@ func (s *service) Attach(ctx context.Context) (<-chan Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	messageChan := make(chan Message)
+	// todo: remove
+	fmt.Printf("get messages: %v", messages)
+	// todo: maybe return existing messages as slice and use chan only for new
+	messageChan := make(chan Message, len(messages)*2)
 	for _, message := range messages {
 		messageChan <- message
 	}

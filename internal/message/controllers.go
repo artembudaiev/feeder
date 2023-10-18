@@ -16,6 +16,10 @@ type Controller struct {
 	service Service
 }
 
+func NewController(service Service) *Controller {
+	return &Controller{service: service}
+}
+
 func (c *Controller) HandleAdd() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var msg Message
@@ -40,7 +44,8 @@ func (c *Controller) HandleGet() http.HandlerFunc {
 			http.NotFound(w, r)
 			return
 		}
-		w.Header().Set("Content-Type", "text/plain")
+
+		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Transfer-Encoding", "chunked")
 		w.WriteHeader(http.StatusOK)
 		flusher.Flush()
