@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - cockroachdb1
+      - cockroachdb2
+
+  cockroachdb1:
+    image: cockroachdb/cockroach:v21.1.16
+    command: start --insecure --join=cockroachdb1,cockroachdb2 --store=node1 --http-port=8081
+    ports:
+      - "26257:26257"
+      - "8081:8080"
+
+  cockroachdb2:
+    image: cockroachdb/cockroach:v21.1.16
+    command: start --insecure --join=cockroachdb1,cockroachdb2 --store=node2 --http-port=8082
+    ports:
+      - "26258:26257"
+      - "8082:8080"

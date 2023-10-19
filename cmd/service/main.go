@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	dbConn, err := sql.Open("postgres", "postgresql://root@127.0.0.1:26257/defaultdb?sslmode=disable")
+	dbConn, err := sql.Open("postgres", "postgresql://root@roach1:26257/defaultdb?sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}

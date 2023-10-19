@@ -3,7 +3,7 @@ package message
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -25,13 +25,17 @@ func (c *Controller) HandleAdd() http.HandlerFunc {
 		var msg Message
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&msg); err != nil {
+			log.Println(err.Error())
 			http.Error(w, "invalid JSON payload", http.StatusBadRequest)
+			return
 		}
 		if err := c.service.Add(r.Context(), msg); err != nil {
+			log.Println(err.Error())
 			http.Error(w, "failed to add message", http.StatusInternalServerError)
+			return
 		}
 		// todo: remove
-		fmt.Printf("added message: %s", msg)
+		log.Printf("added message: %s", msg)
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -54,7 +58,9 @@ func (c *Controller) HandleGet() http.HandlerFunc {
 
 		msgChan, err := c.service.Attach(ctx)
 		if err != nil {
+			log.Println(err.Error())
 			http.Error(w, "failed to listen to the new messages", http.StatusInternalServerError)
+			return
 		}
 		for {
 			select {
