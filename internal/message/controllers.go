@@ -47,7 +47,7 @@ func (c *Controller) HandleGet() http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Transfer-Encoding", "chunked")
-		w.WriteHeader(http.StatusOK)
+
 		flusher.Flush()
 
 		enc := json.NewEncoder(w)
