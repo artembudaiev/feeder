@@ -2,12 +2,23 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    container_name: app
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8088:8088"
     depends_on:
       - cockroachdb1
       - cockroachdb2
+
+  client:
+    container_name: client
+    build:
+      context: .
+      dockerfile: Dockerfile-client
+    depends_on:
+      - app
 
   cockroachdb1:
     image: cockroachdb/cockroach:v21.1.16

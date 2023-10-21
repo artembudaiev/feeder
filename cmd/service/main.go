@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	dbConn, err := sql.Open("postgres", "postgresql://root@roach1:26257/defaultdb?sslmode=disable")
+	dbConn, err := sql.Open("postgres", "postgresql://root@cockroachdb1:26257/defaultdb?sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -22,5 +22,9 @@ func main() {
 
 	http.Handle("/message", controller.HandleAdd())
 	http.Handle("/messages", controller.HandleGet())
-	http.ListenAndServe(":8081", nil)
+	err = http.ListenAndServe("app:8088", nil)
+	log.Println("starting http server...")
+	if err != nil {
+		log.Printf("failed to start a server %s", err.Error())
+	}
 }
