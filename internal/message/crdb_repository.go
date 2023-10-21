@@ -3,6 +3,7 @@ package message
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	_ "github.com/cockroachdb/cockroach-go/crdb"
 	_ "github.com/lib/pq"
 )
@@ -24,7 +25,7 @@ func (repo *CockroachDBRepository) Add(ctx context.Context, message Message) (st
 	var id string
 	err := repo.db.QueryRowContext(ctx, query, message.Text).Scan(&id)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to insert message %w", err)
 	}
 
 	return id, nil
@@ -36,7 +37,7 @@ func (repo *CockroachDBRepository) GetAll(ctx context.Context) ([]Message, error
 
 	rows, err := repo.db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to query all messages %w", err)
 	}
 	defer rows.Close()
 

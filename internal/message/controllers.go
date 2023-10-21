@@ -34,7 +34,6 @@ func (c *Controller) HandleAdd() http.HandlerFunc {
 			http.Error(w, "failed to add message", http.StatusInternalServerError)
 			return
 		}
-		// todo: remove
 		log.Printf("added message: %s", msg)
 		w.WriteHeader(http.StatusOK)
 	}
@@ -67,6 +66,7 @@ func (c *Controller) HandleGet() http.HandlerFunc {
 			case msg := <-msgChan:
 				_ = enc.Encode(msg)
 				flusher.Flush()
+				log.Printf("sent message: %s", msg)
 			case <-ctx.Done():
 				// on client cancelled request
 				return

@@ -2,7 +2,6 @@ package message
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"sync"
 )
@@ -53,8 +52,6 @@ func (s *service) Attach(ctx context.Context) (<-chan Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	// todo: remove
-	fmt.Printf("get messages: %v", messages)
 	// todo: maybe return existing messages as slice and use chan only for new
 	messageChan := make(chan Message, len(messages)*2)
 	for _, message := range messages {

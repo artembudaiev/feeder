@@ -14,8 +14,8 @@ services:
       timeout: 3s
       retries: 3
     depends_on:
-      - cockroachdb1
-      - cockroachdb2
+      migrate:
+        condition: service_completed_successfully
 
   client:
     container_name: client
@@ -29,7 +29,7 @@ services:
     container_name: cockroachdb1
     hostname: cockroachdb1
     image: cockroachdb/cockroach:v21.1.16
-    command: start --insecure --join=cockroachdb1,cockroachdb2 --store=node1 --advertise-addr=cockroachdb1:26357 --http-addr=cockroachdb1:8080 --listen-addr=cockroachdb1:26357 --sql-addr=cockroachdb1:26257
+    command: start --insecure --join=cockroachdb1:26257,cockroachdb2:26258 --store=node1 --advertise-addr=cockroachdb1:26257 --http-addr=cockroachdb1:8080
     ports:
       - "26257:26257"
       - "8080:8080"
@@ -43,7 +43,7 @@ services:
     container_name: cockroachdb2
     hostname: cockroachdb2
     image: cockroachdb/cockroach:v21.1.16
-    command: start --insecure --join=cockroachdb1,cockroachdb2 --store=node2 --advertise-addr=cockroachdb2:26357 --http-addr=cockroachdb2:8081 --listen-addr=cockroachdb2:26357 --sql-addr=cockroachdb2:26258
+    command: start --insecure --join=cockroachdb1:26257,cockroachdb2:26258 --store=node2 --advertise-addr=cockroachdb2:26258 --http-addr=cockroachdb2:8081
     ports:
       - "26258:26257"
       - "8081:8080"
