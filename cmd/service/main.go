@@ -22,6 +22,10 @@ func main() {
 
 	http.Handle("/message", controller.HandleAdd())
 	http.Handle("/messages", controller.HandleGet())
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("healthy"))
+	})
 	err = http.ListenAndServe("app:8088", nil)
 	log.Println("starting http server...")
 	if err != nil {

@@ -8,6 +8,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8088:8088"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://app:8088/health" ]
+      interval: 3s
+      timeout: 3s
+      retries: 3
     depends_on:
       - cockroachdb1
       - cockroachdb2
@@ -21,15 +26,38 @@ services:
       - app
 
   cockroachdb1:
+    container_name: cockroachdb1
+    hostname: cockroachdb1
     image: cockroachdb/cockroach:v21.1.16
-    command: start --insecure --join=cockroachdb1,cockroachdb2 --store=node1 --http-port=8081
+    command: start --insecure --join=cockroachdb1,cockroachdb2 --store=node1 --advertise-addr=cockroachdb1:26357 --http-addr=cockroachdb1:8080 --listen-addr=cockroachdb1:26357 --sql-addr=cockroachdb1:26257
     ports:
       - "26257:26257"
-      - "8081:8080"
+      - "8080:8080"
+    healthcheck:
+      test: [ "CMD-SHELL", "cockroach node ls --insecure" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
 
   cockroachdb2:
+    container_name: cockroachdb2
+    hostname: cockroachdb2
     image: cockroachdb/cockroach:v21.1.16
-    command: start --insecure --join=cockroachdb1,cockroachdb2 --store=node2 --http-port=8082
+    command: start --insecure --join=cockroachdb1,cockroachdb2 --store=node2 --advertise-addr=cockroachdb2:26357 --http-addr=cockroachdb2:8081 --listen-addr=cockroachdb2:26357 --sql-addr=cockroachdb2:26258
     ports:
       - "26258:26257"
-      - "8082:8080"
+      - "8081:8080"
+    healthcheck:
+      test: [ "CMD-SHELL", "cockroach node ls --insecure" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  migrate:
+    container_name: migrate
+    image: migrate/migrate
+    volumes:
+      - ./repo/pg/migrations:/migrations
+    command: [ "-path", "/migrations", "-database",  "cockroachdb://root@cockroachdb1:26257/defaultdb?sslmode=disable", "up" ]
+    depends_on:
+      - cockroachdb1
