@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"github.com/artembudaiev/feeder/internal/config"
@@ -22,10 +23,19 @@ func main() {
 	}
 	defer dbConn.Close()
 
+	svc := message.NewService(
+		message.NewCockroachDBRepository(dbConn),
+	)
+	// todo: implement graceful shutdown
+	go func() {
+		err = svc.Start(context.Background())
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+	}()
 	controller := message.NewController(
-		message.NewService(
-			message.NewCockroachDBRepository(dbConn),
-		),
+		svc,
 	)
 
 	http.Handle("/message", controller.HandleAdd())

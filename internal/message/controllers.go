@@ -8,6 +8,7 @@ import (
 )
 
 type Service interface {
+	Start(ctx context.Context) error
 	Add(ctx context.Context, message Message) error
 	Attach(ctx context.Context) (<-chan Message, error)
 }
