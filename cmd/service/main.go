@@ -2,13 +2,21 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
+	"github.com/artembudaiev/feeder/internal/config"
 	"github.com/artembudaiev/feeder/internal/message"
 	"log"
 	"net/http"
 )
 
 func main() {
-	dbConn, err := sql.Open("postgres", "postgresql://root@cockroachdb1:26257/defaultdb?sslmode=disable")
+	cfgManager, err := config.NewEnvAppManager()
+	if err != nil {
+		log.Fatal(fmt.Errorf("failed to initialize config %w", err))
+	}
+	//dbConn, err := sql.Open("postgres", "postgresql://root@cockroachdb1:26257/defaultdb?sslmode=disable")
+	dbConn, err := sql.Open("postgres", cfgManager.GetConfig().DbUrl)
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -26,8 +34,9 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("healthy"))
 	})
-	err = http.ListenAndServe("app:8088", nil)
-	log.Println("starting http server...")
+	addr := fmt.Sprintf("%s:%s", cfgManager.GetConfig().AppHost, cfgManager.GetConfig().AppPort)
+	log.Printf("starting http server on address %s...", addr)
+	err = http.ListenAndServe(addr, nil)
 	if err != nil {
 		log.Printf("failed to start a server %s", err.Error())
 	}
