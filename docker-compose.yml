@@ -7,9 +7,13 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8088:8088"
+      - "8079:8079"
+    environment:
+      APP_HOST: "app"
+      APP_PORT: "8079"
+      DB_URL: "postgresql://root@cockroachdb1:26257/defaultdb?sslmode=disable"
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://app:8088/health" ]
+      test: [ "CMD", "curl", "-f", "http://app:8079/health" ]
       interval: 3s
       timeout: 3s
       retries: 3
@@ -22,6 +26,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-client
+    environment:
+      APP_HOST: "app"
+      APP_PORT: "8079"
+      SPAM_TIMEOUT_MS: "3000"
     depends_on:
       - app
 

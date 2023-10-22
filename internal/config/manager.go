@@ -85,6 +85,6 @@ func adjustFromEnv(env string, parameter *string) error {
 	if value == "" {
 		return fmt.Errorf("%s environmental value not set", env)
 	}
-	parameter = &value
+	*parameter = value
 	return nil
 }
