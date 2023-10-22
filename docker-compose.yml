@@ -18,6 +18,8 @@ services:
       timeout: 3s
       retries: 3
     depends_on:
+      kafka:
+        condition: service_healthy
       migrate:
         condition: service_completed_successfully
 
@@ -69,3 +71,40 @@ services:
     command: [ "-path", "/migrations", "-database",  "cockroachdb://root@cockroachdb1:26257/defaultdb?sslmode=disable", "up" ]
     depends_on:
       - cockroachdb1
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:5.3.0
+    container_name: 'zookeeper'
+    hostname: 'zookeeper'
+    restart: always
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+      ZOOKEEPER_SASL_ENABLED: "FALSE"
+
+  kafka:
+    image: confluentinc/cp-kafka:5.3.0
+    container_name: 'kafka'
+    hostname: 'kafka'
+    restart: always
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: kafka-topics --bootstrap-server kafka:9092 --list
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      CONFLUENT_METRICS_ENABLE: 'false'
