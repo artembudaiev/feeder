@@ -7,6 +7,9 @@ COPY . /app
 
 WORKDIR /app
 
+# Download dependencies
+RUN go mod download && go mod verify
+
 # Build
 RUN CGO_ENABLED=0 GOOS=linux go build -o  main ./cmd/service
 
