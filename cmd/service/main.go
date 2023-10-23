@@ -16,7 +16,6 @@ func main() {
 	if err != nil {
 		log.Fatal(fmt.Errorf("failed to initialize config %w", err))
 	}
-	//dbConn, err := sql.Open("postgres", "postgresql://root@cockroachdb1:26257/defaultdb?sslmode=disable")
 	dbConn, err := sql.Open("postgres", cfgManager.GetConfig().DbUrl)
 	if err != nil {
 		log.Fatal(err)
@@ -33,9 +32,11 @@ func main() {
 		kafkaProducer,
 	)
 
-	// todo: implement graceful shutdown
+	ctx, cancel:=context.WithCancel(context.Background())
+	defer cancel()
 	go func() {
-		err = svc.Start(context.Background())
+
+		err = svc.Start(ctx)
 		if err != nil {
 			log.Fatal(err)
 			return

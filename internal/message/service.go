@@ -11,7 +11,6 @@ import (
 type Repository interface {
 	Add(context.Context, Message) (string, error)
 	GetAll(context.Context) ([]Message, error)
-	Get(context.Context, string) (Message, error)
 }
 
 type DLQProducer interface {
@@ -85,6 +84,7 @@ func (s *service) Start(ctx context.Context) error {
 					log.Println(err)
 					continue
 				}
+				log.Printf("added message: %s", msg)
 				// broadcast new message to all channels
 				for id, messageChannel := range s.sendChannels {
 					select {

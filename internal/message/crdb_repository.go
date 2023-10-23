@@ -53,16 +53,3 @@ func (repo *CockroachDBRepository) GetAll(ctx context.Context) ([]Message, error
 
 	return messages, nil
 }
-
-// Get retrieves a message by its ID from the database.
-func (repo *CockroachDBRepository) Get(ctx context.Context, id string) (Message, error) {
-	const query = "SELECT text FROM message WHERE id = $1"
-
-	var message Message
-	err := repo.db.QueryRowContext(ctx, query, id).Scan(&message.Text)
-	if err != nil {
-		return Message{}, err
-	}
-
-	return message, nil
-}

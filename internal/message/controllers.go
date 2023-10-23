@@ -35,7 +35,6 @@ func (c *Controller) HandleAdd() http.HandlerFunc {
 			http.Error(w, "failed to add message", http.StatusInternalServerError)
 			return
 		}
-		log.Printf("added message: %s", msg)
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -65,7 +64,10 @@ func (c *Controller) HandleGet() http.HandlerFunc {
 		for {
 			select {
 			case msg := <-msgChan:
-				_ = enc.Encode(msg)
+				if err := enc.Encode(msg); err != nil {
+					log.Println(err)
+					continue
+				}
 				flusher.Flush()
 				log.Printf("sent message: %s", msg)
 			case <-ctx.Done():

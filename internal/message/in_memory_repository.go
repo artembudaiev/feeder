@@ -2,7 +2,6 @@ package message
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 )
 
@@ -26,12 +25,4 @@ func (r *InMemoryRepository) GetAll(_ context.Context) ([]Message, error) {
 		messages = append(messages, message)
 	}
 	return messages, nil
-}
-
-func (r *InMemoryRepository) Get(_ context.Context, id string) (Message, error) {
-	message, ok := r.storage[id]
-	if !ok {
-		return Message{}, fmt.Errorf("no message found by id %s", id)
-	}
-	return message, nil
 }

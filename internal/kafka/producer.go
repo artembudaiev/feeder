@@ -50,10 +50,10 @@ func (p *Producer) handleMessageDelivery(timeout <-chan time.Time, deliveryChan 
 		switch event := ev.(type) {
 		case *kafka.Message:
 			if event.TopicPartition.Error != nil {
-				log.Printf("failed to deliver message: %v", event.TopicPartition)
+				log.Printf("failed to deliver message %s to %v", event.Value, event.TopicPartition)
 				return
 			}
-			log.Printf("message successfully delivered to %v", event.TopicPartition)
+			log.Printf("message {%s} successfully delivered to %v", event.Value, event.TopicPartition)
 		case kafka.Error:
 			log.Printf("failed to deliver message: %v", event)
 		default:
