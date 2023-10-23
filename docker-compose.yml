@@ -6,12 +6,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    entrypoint: ./main
     ports:
       - "8079:8079"
     environment:
       APP_HOST: "app"
       APP_PORT: "8079"
       DB_URL: "postgresql://root@cockroachdb1:26257/defaultdb?sslmode=disable"
+      KAFKA_BROKER: "kafka:9092"
+      KAFKA_TOPIC: "messages-dlq"
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://app:8079/health" ]
       interval: 3s
@@ -31,9 +34,10 @@ services:
     environment:
       APP_HOST: "app"
       APP_PORT: "8079"
-      SPAM_TIMEOUT_MS: "3000"
+      SPAM_TIMEOUT_MS: "1000"
     depends_on:
-      - app
+      app:
+        condition: service_healthy
 
   cockroachdb1:
     container_name: cockroachdb1
@@ -70,7 +74,8 @@ services:
       - ./repo/pg/migrations:/migrations
     command: [ "-path", "/migrations", "-database",  "cockroachdb://root@cockroachdb1:26257/defaultdb?sslmode=disable", "up" ]
     depends_on:
-      - cockroachdb1
+      cockroachdb1:
+        condition: service_healthy
 
   zookeeper:
     image: confluentinc/cp-zookeeper:5.3.0

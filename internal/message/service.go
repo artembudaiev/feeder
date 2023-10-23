@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	"log"
 	"sync"
+	"time"
 )
 
 type Repository interface {
@@ -13,16 +14,22 @@ type Repository interface {
 	Get(context.Context, string) (Message, error)
 }
 
+type DLQProducer interface {
+	Produce(ctx context.Context, msg []byte) error
+}
+
 type service struct {
 	repository     Repository
+	dlqProducer    DLQProducer
 	sendChannels   map[string]chan Message
 	receiveChannel chan Message
 	m              sync.RWMutex
 }
 
-func NewService(repository Repository) Service {
+func NewService(repository Repository, dlqProducer DLQProducer) Service {
 	return &service{
 		repository:     repository,
+		dlqProducer:    dlqProducer,
 		sendChannels:   make(map[string]chan Message, 10),
 		receiveChannel: make(chan Message, 2),
 		m:              sync.RWMutex{},
@@ -30,11 +37,14 @@ func NewService(repository Repository) Service {
 }
 
 func (s *service) Add(ctx context.Context, message Message) error {
-
 	select {
 	case s.receiveChannel <- message:
 	default:
-		// todo: move to dlq
+		// todo: proper serialization, for now ok
+		if err := s.dlqProducer.Produce(ctx, []byte(message.Text)); err != nil {
+			log.Println(err)
+		}
+		log.Printf("message moved to dlq: %s", message.Text)
 	}
 	return nil
 }
@@ -63,6 +73,9 @@ func (s *service) Start(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case msg := <-s.receiveChannel:
+			// todo: remove the next line, it is used only for demonstration purpose to simulate high workload
+			time.Sleep(time.Millisecond * 3000)
+
 			// todo: consider where to unlock
 			s.m.Lock()
 			{

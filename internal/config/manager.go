@@ -37,6 +37,8 @@ func NewEnvAppManager() (AppManager, error) {
 		adjustFromEnv(AppHostEnv, &cfg.AppHost),
 		adjustFromEnv(AppPortEnv, &cfg.AppPort),
 		adjustFromEnv(DbUrlEnv, &cfg.DbUrl),
+		adjustFromEnv(KafkaBrokerEnv, &cfg.KafkaBroker),
+		adjustFromEnv(KafkaTopicEnv, &cfg.KafkaTopic),
 	).ErrorOrNil(); err != nil {
 		return nil, err
 	}
@@ -65,13 +67,17 @@ const (
 	AppHostEnv       = "APP_HOST"
 	AppPortEnv       = "APP_PORT"
 	DbUrlEnv         = "DB_URL"
+	KafkaBrokerEnv   = "KAFKA_BROKER"
+	KafkaTopicEnv    = "KAFKA_TOPIC"
 	SpamTimeoutMsEnv = "SPAM_TIMEOUT_MS"
 )
 
 type AppConfig struct {
-	AppHost string
-	AppPort string
-	DbUrl   string
+	AppHost     string
+	AppPort     string
+	DbUrl       string
+	KafkaBroker string
+	KafkaTopic  string
 }
 
 type ClientConfig struct {

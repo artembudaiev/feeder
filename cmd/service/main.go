@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/artembudaiev/feeder/internal/config"
+	"github.com/artembudaiev/feeder/internal/kafka"
 	"github.com/artembudaiev/feeder/internal/message"
 	"log"
 	"net/http"
@@ -17,15 +18,21 @@ func main() {
 	}
 	//dbConn, err := sql.Open("postgres", "postgresql://root@cockroachdb1:26257/defaultdb?sslmode=disable")
 	dbConn, err := sql.Open("postgres", cfgManager.GetConfig().DbUrl)
-
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer dbConn.Close()
 
+	kafkaProducer, err := kafka.NewProducer(cfgManager.GetConfig().KafkaBroker, cfgManager.GetConfig().KafkaTopic)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	svc := message.NewService(
 		message.NewCockroachDBRepository(dbConn),
+		kafkaProducer,
 	)
+
 	// todo: implement graceful shutdown
 	go func() {
 		err = svc.Start(context.Background())
